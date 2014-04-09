@@ -1,0 +1,48 @@
+namespace :load do
+  task :defaults do
+    set :mongoid_max_retries, 10
+  end
+end
+
+namespace :mongo do
+  desc 'setup mongodb/mongoid configuration'
+  task :setup do
+    on roles :db do
+      ask :mongodb_database, "#{fetch(:application)}_#{fetch(:stage)}"
+      ask :mongodb_username, fetch(:application)
+      ask :mongodb_password, SecureRandom.base64
+
+      template 'mongoid.yml.erb', "#{shared_path}/config/mongoid.yml"
+
+      sudo <<-SCRIPT
+        mongo --eval "
+          db.getSiblingDB('#{fetch(:mongodb_database)}').
+            addUser('#{fetch(:mongodb_username)}', '#{fetch(:mongodb_password)}')
+        "
+      SCRIPT
+    end
+  end
+
+  %w[start stop restart].each do |command|
+    desc "#{command} mongodb"
+    task command do
+      on roles :db do
+        sudo "service mongodb #{command}"
+      end
+    end
+  end
+
+  desc "Create indexes of all models"
+  task :create_indexes do
+    on roles :app do
+      within current_path do
+        with rails_env: fetch(:rails_env) do
+          rake 'db:mongoid:create_indexes'
+        end
+      end
+    end
+  end
+end
+
+before 'deploy:restart', 'mongo:create_indexes'
+after 'mongo:setup', 'mongo:restart'

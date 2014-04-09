@@ -1,0 +1,10 @@
+<%= fetch(:stage) %>:
+  sessions:
+    default:
+      hosts:
+        - localhost:27017
+      database: <%= fetch(:mongodb_database) %>
+      username: <%= fetch(:mongodb_username) %>
+      password: <%= fetch(:mongodb_password) %>
+      options:
+        max_retries: <%= fetch(:mongoid_max_retries) %>

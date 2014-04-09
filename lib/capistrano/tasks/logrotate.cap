@@ -1,0 +1,22 @@
+namespace :load do
+  task :defaults do
+    set :logrotate_keeps, 60
+  end
+end
+
+namespace :logrotate do
+  desc 'Setup logrotate configuration'
+  task :setup do
+    on roles :app do
+      template 'logrotate.erb', "#{shared_path}/logrotate"
+      sudo "mv #{shared_path}/logrotate /etc/logrotate.d/#{fetch(:application)}"
+    end
+  end
+
+  desc 'Validate logrotate configuration'
+  task :validate do
+    on roles :app do
+      test 'logrotate', "-d /etc/logrotate.d/#{fetch(:application)}"
+    end
+  end
+end

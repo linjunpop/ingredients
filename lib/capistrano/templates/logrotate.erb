@@ -1,0 +1,9 @@
+<%= shared_path %>/log/*.log {
+  daily
+  missingok
+  rotate <%= fetch(:logrotate_keeps) %>
+  compress
+  delaycompress
+  notifempty
+  copytruncate
+}

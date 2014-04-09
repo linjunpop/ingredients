@@ -1,0 +1,33 @@
+namespace :load do
+  task :defaults do
+    set :nginx_port, 80
+    set :nginx_server_name, -> { fetch(:domain) }
+    set :nginx_bind, -> { fetch(:puma_bind) }
+    set :nginx_keepalive_timeout, 10
+    set :nginx_client_max_body_size, '14M'
+    set :nginx_client_body_buffer_size, '128k'
+  end
+end
+
+namespace :nginx do
+  desc 'Setup nginx configuration for this application'
+  task :setup do
+    on roles :web do
+      template 'nginx_puma.conf.erb', "#{shared_path}/nginx.conf"
+
+      sudo "rm -rf /etc/nginx/sites-enabled/default"
+      sudo "mv #{shared_path}/nginx.conf /etc/nginx/sites-enabled/#{fetch(:application)}.conf"
+    end
+  end
+
+  %w[start stop restart].each do |command|
+    desc "#{command}.capitalize nginx"
+    task command do
+      on roles :web do
+        sudo "service nginx #{command}"
+      end
+    end
+  end
+end
+
+after 'nginx:setup', 'nginx:restart'

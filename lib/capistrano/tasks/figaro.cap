@@ -1,0 +1,13 @@
+namespace :figaro do
+  task :setup do
+    on roles(:app) do
+      raise 'Can not read config file' unless File.exist?('config/application.yml')
+
+      system %Q(rails runner 'puts Figaro.env("#{fetch(:stage)}").to_yaml' > tmp/_application_.yml)
+      upload! 'tmp/_application_.yml', "#{shared_path}/config/application.yml"
+      system 'rm tmp/_application_.yml'
+
+      info 'Setup Figaro: application.yml'
+    end
+  end
+end
